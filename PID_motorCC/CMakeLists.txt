@@ -47,8 +47,8 @@ pico_set_program_name(PID_motorCC "PID_motorCC")
 pico_set_program_version(PID_motorCC "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(PID_motorCC 0)
-pico_enable_stdio_usb(PID_motorCC 0)
+pico_enable_stdio_uart(PID_motorCC 1)
+pico_enable_stdio_usb(PID_motorCC 1)
 
 # Add the standard library to the build
 target_link_libraries(PID_motorCC
@@ -57,6 +57,8 @@ target_link_libraries(PID_motorCC
         hardware_i2c
         hardware_pwm
         hardware_pll
+        hardware_adc
+        hardware_dma
         pico_stdlib)
 
 # Add the standard include files to the build
