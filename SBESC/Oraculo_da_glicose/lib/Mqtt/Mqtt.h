@@ -90,6 +90,9 @@ static void publish_temperature(MQTT_CLIENT_DATA_T *state)
     }
 }
 
+/// @brief Funcao de callback para requisicoes de inscricao
+/// @param arg Estrutura MQTT
+/// @param err  ?
 static void sub_request_cb(void *arg, err_t err)
 {
     MQTT_CLIENT_DATA_T *state = (MQTT_CLIENT_DATA_T *)arg;
@@ -99,6 +102,9 @@ static void sub_request_cb(void *arg, err_t err)
     state->subscribe_count++;
 }
 
+/// @brief Funcao de callback para requisicoes de desinscricao
+/// @param arg Estrutura MQTT
+/// @param err  ?
 static void unsub_request_cb(void *arg, err_t err)
 {
     MQTT_CLIENT_DATA_T *state = (MQTT_CLIENT_DATA_T *)arg;
@@ -116,6 +122,9 @@ static void unsub_request_cb(void *arg, err_t err)
     }
 }
 
+/// @brief Inscreve ou desinscreve dos topicos
+/// @param state Estrutura MQTT
+/// @param sub   true para inscrever, false para desinscrever
 static void sub_unsub_topics(MQTT_CLIENT_DATA_T *state, bool sub)
 {
     mqtt_request_cb_t cb = sub ? sub_request_cb : unsub_request_cb;
@@ -123,6 +132,12 @@ static void sub_unsub_topics(MQTT_CLIENT_DATA_T *state, bool sub)
                    MQTT_SUBSCRIBE_QOS, cb, state, sub);
 }
 
+/// @brief Funcao que retorna o dado que foi Transmitido
+/// do BROKER -> MQTT CLIENT (pico)
+/// @param arg Estrutura MQTT
+/// @param data Dados que chegaram
+/// @param len Tamanho dos dados
+/// @param flags ?
 static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len, u8_t flags)
 {
     MQTT_CLIENT_DATA_T *state = (MQTT_CLIENT_DATA_T *)arg;
@@ -153,12 +168,16 @@ static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len, u8_t f
     }
 }
 
+/// @brief ?
 static void mqtt_incoming_publish_cb(void *arg, const char *topic, u32_t tot_len)
 {
     MQTT_CLIENT_DATA_T *state = (MQTT_CLIENT_DATA_T *)arg;
     strncpy(state->topic, topic, sizeof(state->topic));
 }
 
+/// @brief Funcao que sera chamada periodicamente para publicacao
+/// @param context 
+/// @param worker 
 static void temperature_worker_fn(async_context_t *context, async_at_time_worker_t *worker)
 {
     MQTT_CLIENT_DATA_T *state = (MQTT_CLIENT_DATA_T *)worker->user_data;
@@ -168,6 +187,10 @@ static void temperature_worker_fn(async_context_t *context, async_at_time_worker
 
 static async_at_time_worker_t temperature_worker = {.do_work = temperature_worker_fn};
 
+/// @brief Funcao de callback de conexao MQTT
+/// @param client Cliente (pico w)
+/// @param arg Estrutura MQTT
+/// @param status Situacao
 static void mqtt_connection_cb(mqtt_client_t *client, void *arg, mqtt_connection_status_t status)
 {
     MQTT_CLIENT_DATA_T *state = (MQTT_CLIENT_DATA_T *)arg;
@@ -196,6 +219,8 @@ static void mqtt_connection_cb(mqtt_client_t *client, void *arg, mqtt_connection
         panic("Unexpected status");
 }
 
+/// @brief  Inicia o cliente MQTT
+/// @param state Estrutura MQTT
 void start_client(MQTT_CLIENT_DATA_T *state)
 {
 #if LWIP_ALTCP && LWIP_ALTCP_TLS
