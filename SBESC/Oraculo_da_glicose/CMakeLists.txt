@@ -41,18 +41,33 @@ pico_sdk_init()
 # Flahes once quickly each second when it's running but not connected to another device
 # Flashes twice quickly each second when connected to another device and reading it's temperature
 add_executable(picow_ble_temp_reader
-    client.c
+    main.c
+    # teste.c
     )
+
+# Pull in FreeRTOS
+include(FreeRTOS-Kernel/portable/ThirdParty/GCC/RP2040/FreeRTOS_Kernel_import.cmake)
+
+include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/lib/Ble)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/lib/Mqtt)
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(picow_ble_temp_reader 1)
 pico_enable_stdio_usb(picow_ble_temp_reader 1)
 
 target_link_libraries(picow_ble_temp_reader
+    FreeRTOS-Kernel 
+    FreeRTOS-Kernel-Heap4
     pico_stdlib
     pico_btstack_ble
     pico_btstack_cyw43
-    pico_cyw43_arch_none
+    # pico_cyw43_arch_none
+    pico_cyw43_arch_lwip_threadsafe_background
+    pico_lwip_mqtt
+    pico_mbedtls
+    pico_lwip_mbedtls
+    pico_lwip_http
     hardware_adc
     )
 target_include_directories(picow_ble_temp_reader PRIVATE

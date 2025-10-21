@@ -1,10 +1,9 @@
-/**
- * Copyright (c) 2023 Raspberry Pi (Trading) Ltd.
- *
- * SPDX-License-Identifier: BSD-3-Clause
- */
+#ifndef BLE_H
+#define BLE_H
 
 #include <stdio.h>
+#include <stdint.h>
+
 #include "btstack.h"
 #include "pico/cyw43_arch.h"
 #include "pico/stdlib.h"
@@ -279,17 +278,8 @@ static void heartbeat_handler(struct btstack_timer_source *ts)
     btstack_run_loop_add_timer(ts);
 }
 
-int main()
+int BLE_Init(void)
 {
-    stdio_init_all();
-
-    // initialize CYW43 driver architecture (will enable BT if/because CYW43_ENABLE_BLUETOOTH == 1)
-    if (cyw43_arch_init())
-    {
-        printf("failed to initialise cyw43_arch\n");
-        return -1;
-    }
-
     l2cap_init();
     sm_init();
     sm_set_io_capabilities(IO_CAPABILITY_NO_INPUT_NO_OUTPUT);
@@ -309,22 +299,6 @@ int main()
 
     // turn on!
     hci_power_control(HCI_POWER_ON);
-
-    // btstack_run_loop_execute is only required when using the 'polling' method (e.g. using pico_cyw43_arch_poll library).
-    // This example uses the 'threadsafe background` method, where BT work is handled in a low priority IRQ, so it
-    // is fine to call bt_stack_run_loop_execute() but equally you can continue executing user code.
-
-#if 1 // this is only necessary when using polling (which we aren't, but we're showing it is still safe to call in this case)
-    btstack_run_loop_execute();
-#else
-    // this core is free to do it's own stuff except when using 'polling' method (in which case you should use
-    // btstacK_run_loop_ methods to add work to the run loop.
-
-    // this is a forever loop in place of where user code would go.
-    while (true)
-    {
-        sleep_ms(1000);
-    }
-#endif
-    return 0;
 }
+
+#endif
