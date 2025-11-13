@@ -44,8 +44,8 @@ pico_set_program_name(RTOS_exp "RTOS_exp")
 pico_set_program_version(RTOS_exp "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(RTOS_exp 0)
-pico_enable_stdio_usb(RTOS_exp 0)
+pico_enable_stdio_uart(RTOS_exp 1)
+pico_enable_stdio_usb(RTOS_exp 1)
 
 # Add the standard library to the build
 target_link_libraries(RTOS_exp
