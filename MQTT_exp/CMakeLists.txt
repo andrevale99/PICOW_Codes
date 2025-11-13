@@ -28,34 +28,35 @@ set(PICO_BOARD pico_w CACHE STRING "Board type")
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-project(picow_ble_temp_sensor C CXX ASM)
+project(MQTT_exp C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-# Standalone example that reads from the on board temperature sensor and sends notifications via BLE
-# Flashes slowly each second to show it's running
-add_executable(picow_ble_temp_sensor
-    server.c
-    )
+add_executable(MQTT_exp MQTT_exp.c )
+
+pico_set_program_name(MQTT_exp "MQTT_exp")
+pico_set_program_version(MQTT_exp "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(picow_ble_temp_sensor 1)
-pico_enable_stdio_usb(picow_ble_temp_sensor 1)
+pico_enable_stdio_uart(MQTT_exp 0)
+pico_enable_stdio_usb(MQTT_exp 0)
 
-target_link_libraries(picow_ble_temp_sensor
-    pico_stdlib
-    pico_btstack_ble
-    pico_btstack_cyw43
-    pico_cyw43_arch_none
-    hardware_adc
-    )
-target_include_directories(picow_ble_temp_sensor PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}
-    ${CMAKE_CURRENT_LIST_DIR}/.. # For our common btstack config
-    )
-pico_btstack_make_gatt_header(picow_ble_temp_sensor PRIVATE "${CMAKE_CURRENT_LIST_DIR}/temp_sensor.gatt")
+# Add the standard library to the build
+target_link_libraries(MQTT_exp
+        pico_stdlib)
 
-pico_add_extra_outputs(picow_ble_temp_sensor)
+# Add the standard include files to the build
+target_include_directories(MQTT_exp PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}
+)
+
+# Add any user requested libraries
+target_link_libraries(MQTT_exp 
+        
+        )
+
+pico_add_extra_outputs(MQTT_exp)
+
