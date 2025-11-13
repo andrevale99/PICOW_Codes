@@ -1,5 +1,5 @@
 /*
-Procure por SBESC para procurar 
+Procure por SBESC para procurar
 as linhas para revisao
 */
 
@@ -7,26 +7,35 @@ as linhas para revisao
 
 static MQTT_CLIENT_DATA_T state;
 
-static void temperature_worker_fn(async_context_t* context, async_at_time_worker_t* worker) {
-    MQTT_CLIENT_DATA_T* state = (MQTT_CLIENT_DATA_T*)worker->user_data;
-    publish_temperature(state);
-    async_context_add_at_time_worker_in_ms(context, worker, TEMP_WORKER_TIME_S * 1000);
-    }
-
-static async_at_time_worker_t temperature_worker = { .do_work = temperature_worker_fn };
-
 //========================================
 //  CALLBACKS FUNCTIONS
 //========================================
 
+static const char* full_topic(MQTT_CLIENT_DATA_T* state, const char* name)
+    {
+#if MQTT_UNIQUE_TOPIC
+    static char full_topic_[MQTT_TOPIC_LEN];
+    snprintf(full_topic, sizeof(full_topic), "/%s%s", state->mqtt_client_info.client_id, name);
+    return full_topic;
+#else
+    return name;
+#endif
+    }
+
+/// @brief Callback para qunado realizar a conexao
+/// @param[in] client Estrutura mqtt_client_t 
+/// @param[in] arg Argumentos 
+/// @param[in] status Status de conexao do MQTT
 static void mqtt_connection_cb(mqtt_client_t* client, void* arg, mqtt_connection_status_t status) {
     MQTT_CLIENT_DATA_T* state = (MQTT_CLIENT_DATA_T*)arg;
-    
-    // sbesc
-    // Colocar eventbit sinaliazando que foi conectado
-    if (status == MQTT_CONNECT_ACCEPTED)
+
+    switch (status)
+        {
+        case MQTT_CONNECT_ACCEPTED:
         {
         state->connect_done = true;
+
+        printf("[MQTT] CONEXAO ACEITA\n");
 
         // sbesc
         // //Necessidade de se inscrever ?
@@ -35,7 +44,7 @@ static void mqtt_connection_cb(mqtt_client_t* client, void* arg, mqtt_connection
         // indicate online
         if (state->mqtt_client_info.will_topic)
             mqtt_publish(state->mqtt_client_inst, state->mqtt_client_info.will_topic,
-                "1", 1, MQTT_WILL_QOS, true, pub_request_cb, state);
+                "1", 1, MQTT_WILL_QOS, true, NULL, state);
 
 
         // sbesc
@@ -43,13 +52,29 @@ static void mqtt_connection_cb(mqtt_client_t* client, void* arg, mqtt_connection
         // temperature_worker.user_data = state;
         // async_context_add_at_time_worker_in_ms(cyw43_arch_async_context(), &temperature_worker, 0);
         }
-    else if (status == MQTT_CONNECT_DISCONNECTED)
+        break;
+
+        case MQTT_CONNECT_DISCONNECTED:
+        {
         if (!state->connect_done)
-            printf("Failed to connect to mqtt server\n");
+            printf("[MQTT] Falha na conexao MQTT\n");
 
         else
-            printf("Unexpected status\n");
+            printf("[MQTT] Falha na conexao MQTT desconhecida\n");
+        }
+        break;
 
+        default:
+            break;
+        }
+
+
+    }
+
+static void mqtt_incoming_publish_cb(void* arg, const char* topic, u32_t tot_len)
+    {
+    MQTT_CLIENT_DATA_T* state = (MQTT_CLIENT_DATA_T*)arg;
+    strncpy(state->topic, topic, sizeof(state->topic));
     }
 
 //========================================
@@ -65,41 +90,29 @@ static void start_client(MQTT_CLIENT_DATA_T* state)
     printf("Using TLS\n");
 #else
     const int port = MQTT_PORT;
-    printf("Warning: Not using TLS\n");
+    // printf("Warning: Not using TLS\n");
 #endif
 
     state->mqtt_client_inst = mqtt_client_new();
     if (!state->mqtt_client_inst)
         panic("MQTT client instance creation error");
 
-    printf("IP address of this device %s\n", ipaddr_ntoa(&(netif_list->ip_addr)));
-    printf("Connecting to mqtt server at %s\n", ipaddr_ntoa(&state->mqtt_server_address));
+    // printf("IP address of this device %s\n", ipaddr_ntoa(&(netif_list->ip_addr)));
+    // printf("Connecting to mqtt server at %s\n", ipaddr_ntoa(&state->mqtt_server_address));
 
     cyw43_arch_lwip_begin();
     if (mqtt_client_connect(state->mqtt_client_inst, &state->mqtt_server_address, port,
         mqtt_connection_cb, state, &state->mqtt_client_info) != ERR_OK)
-        {
         printf("MQTT broker connection error");
-        }
-    printf("Connected\n");
+
+    printf("[MQTT] CONECTADO\n");
 #if LWIP_ALTCP && LWIP_ALTCP_TLS
     // This is important for MBEDTLS_SSL_SERVER_NAME_INDICATION
     mbedtls_ssl_set_hostname(altcp_tls_context(state->mqtt_client_inst->conn), MQTT_SERVER);
 #endif
     mqtt_set_inpub_callback(state->mqtt_client_inst, mqtt_incoming_publish_cb,
-        mqtt_incoming_data_cb, state);
+        NULL, state);
     cyw43_arch_lwip_end();
-    }
-
-static const char* full_topic(MQTT_CLIENT_DATA_T* state, const char* name)
-    {
-#if MQTT_UNIQUE_TOPIC
-    static char full_topic_[MQTT_TOPIC_LEN];
-    snprintf(full_topic, sizeof(full_topic), "/%s%s", state->mqtt_client_info.client_id, name);
-    return full_topic;
-#else
-    return name;
-#endif
     }
 
 //========================================

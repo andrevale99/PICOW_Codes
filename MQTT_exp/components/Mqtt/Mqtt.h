@@ -33,6 +33,8 @@
 // keep alive in seconds
 #define MQTT_KEEP_ALIVE_S 60
 
+#define TOPIC "/ORACULO/versao_0.1"
+
 typedef struct {
     mqtt_client_t* mqtt_client_inst;
     struct mqtt_connect_client_info_t mqtt_client_info;
